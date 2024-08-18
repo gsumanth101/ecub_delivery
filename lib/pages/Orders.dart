@@ -68,7 +68,7 @@ class _OrdersPageState extends State<OrdersPage> {
     return Scaffold(
       backgroundColor: Colors.purple[50],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 205, 195, 222),
         toolbarHeight: 80,
         title: const Text(
           'Orders',
@@ -85,7 +85,7 @@ class _OrdersPageState extends State<OrdersPage> {
             child: Row(
               children: [
                 _buildTabButton(0, 'Pending Orders'),
-                _buildTabButton(1, 'Completed Orders'),
+                // _buildTabButton(1, 'Completed Orders'),
               ],
             ),
           ),

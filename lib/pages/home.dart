@@ -1,4 +1,5 @@
 import 'package:ecub_delivery/pages/navigation.dart';
+import 'package:ecub_delivery/services/orders_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ecub_delivery/pages/Earnings.dart';
 import 'package:ecub_delivery/pages/Orders.dart';
@@ -6,27 +7,18 @@ import 'package:ecub_delivery/pages/login.dart';
 import 'package:ecub_delivery/pages/profile.dart';
 import 'package:ecub_delivery/services/auth_service.dart';
 import 'package:ecub_delivery/services/user_service.dart';
-// Import the order details page
 
 class OrdersSam {
   final String orderId;
   final String itemName;
   final String customerName;
-  final String customerMobile;
   final String itemPrice;
-  final String latt;
-  final String long;
-  final String address;
 
   OrdersSam({
     required this.orderId,
     required this.itemName,
     required this.customerName,
-    required this.customerMobile,
     required this.itemPrice,
-    required this.latt,
-    required this.long,
-    required this.address,
   });
 }
 
@@ -39,22 +31,28 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _user;
+  final OrdersService _ordersService = OrdersService();
+  List<OrdersSam> _orders = [];
+  bool _isLoading = true;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+    _fetchOrders();
   }
 
   Future<void> _fetchUserData() async {
     try {
+      print("Fetching user data...");
       final userService = UserService();
       final userData = await userService.fetchUserData();
       setState(() {
         _user = userData;
         _loading = false;
       });
+      print("User data fetched successfully.");
     } catch (e) {
       print("Error fetching user data: $e");
       setState(() {
@@ -63,31 +61,41 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchOrders() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print("Fetching orders...");
+      String status = 'Pending';
+      List<Map<String, dynamic>> ordersData =
+          await _ordersService.fetchOrdersByStatus(status);
+
+      List<OrdersSam> orders = ordersData.map((order) {
+        return OrdersSam(
+          orderId: order['itemId'],
+          itemName: order['itemName'],
+          customerName: order['userId'],
+          itemPrice: order['itemPrice'].toString(),
+        );
+      }).toList();
+
+      setState(() {
+        _orders = orders;
+        _isLoading = false;
+      });
+      print("Orders fetched successfully.");
+    } catch (e) {
+      print("Error fetching orders: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<OrdersSam> orders = [
-      OrdersSam(
-        orderId: "3214",
-        itemName: "Chicken Briyani",
-        customerName: "Ravi",
-        customerMobile: "7075166428",
-        itemPrice: "₹230",
-        latt: "9.167414",
-        long: "77.876747",
-        address: "Kalasalingam University",
-      ),
-      OrdersSam(
-        orderId: "3215",
-        itemName: "Mutton Briyani",
-        customerName: "Suresh",
-        customerMobile: "7075166429",
-        itemPrice: "₹250",
-        latt: "9.167414",
-        long: "77.876747",
-        address: "Kalasalingam University",
-      ),
-    ];
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -251,36 +259,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: ListView.builder(
-                          itemCount: orders.length,
-                          itemBuilder: (context, index) {
-                            OrdersSam order = orders[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 5),
-                              elevation: 3,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(10),
-                                title: Text(
-                                  order.itemName,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  'Customer: Sumanth\nPrice: Price',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                                trailing: Icon(Icons.arrow_forward_ios),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => NavigationPage(),
+                        child: _isLoading
+                            ? Center(child: CircularProgressIndicator())
+                            : ListView.builder(
+                                itemCount: _orders.length,
+                                itemBuilder: (context, index) {
+                                  OrdersSam order = _orders[index];
+                                  return Card(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 5),
+                                    elevation: 3,
+                                    child: ListTile(
+                                      contentPadding: const EdgeInsets.all(10),
+                                      title: Text(
+                                        order.itemName,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text(
+                                        'Customer: ${order.customerName}\nPrice: ${order.itemPrice}',
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
+                                      ),
+                                      trailing: Icon(Icons.arrow_forward_ios),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                NavigationPage(order: order),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   );
                                 },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ],
                   ),
