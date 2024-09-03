@@ -14,6 +14,8 @@ class AuthService {
     required String role,
     required String password,
     required BuildContext context,
+    required int salary,
+    required int rides,
   }) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance
@@ -30,6 +32,8 @@ class AuthService {
           'role': 'delivery_agent',
           'email': email,
           'phone': phone,
+          'salary': salary,
+          'rides': rides,
         });
       }
 

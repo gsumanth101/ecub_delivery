@@ -1,3 +1,4 @@
+import 'package:ecub_delivery/pages/init.dart';
 import 'package:ecub_delivery/pages/navigation.dart';
 import 'package:ecub_delivery/services/orders_service.dart';
 import 'package:flutter/material.dart';
@@ -13,13 +14,20 @@ class OrdersSam {
   final String itemName;
   final String customerName;
   final String itemPrice;
+  final String address;
+  final String vendor;
+  String status;
 
-  OrdersSam({
-    required this.orderId,
-    required this.itemName,
-    required this.customerName,
-    required this.itemPrice,
-  });
+  OrdersSam(
+      {required this.orderId,
+      required this.itemName,
+      required this.customerName,
+      required this.itemPrice,
+      required this.address,
+      required this.vendor,
+      required this.status});
+
+  static fromMap(Map<String, dynamic> order) {}
 }
 
 class HomeScreen extends StatefulWidget {
@@ -68,16 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       print("Fetching orders...");
-      String status = 'Pending';
+      String status = 'completed';
       List<Map<String, dynamic>> ordersData =
           await _ordersService.fetchOrdersByStatus(status);
 
       List<OrdersSam> orders = ordersData.map((order) {
         return OrdersSam(
-          orderId: order['itemId'],
+          orderId: order['docId'],
           itemName: order['itemName'],
           customerName: order['userId'],
           itemPrice: order['itemPrice'].toString(),
+          address: order['address'],
+          vendor: order['vendor'],
+          status: order['status'],
         );
       }).toList();
 
@@ -210,18 +221,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       Text(
-                        'Earnings: ₹ 1000',
+                        'Earnings: ${_user?['salary'] ?? 'Loading...'}',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 22,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      SizedBox(height: 5),
                       Text(
-                        'Rides: 10',
+                        'Rides: ${_user?['rides'] ?? 'Loading...'}',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 18,
@@ -287,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                                NavigationPage(order: order),
+                                                GoogleMapPage(oder: order),
                                           ),
                                         );
                                       },

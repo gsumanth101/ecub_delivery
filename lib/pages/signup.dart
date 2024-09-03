@@ -214,6 +214,8 @@ class Signup extends StatelessWidget {
           name: _nameController.text,
           phone: _phoneController.text,
           role: '',
+          salary: 0,
+          rides: 0,
         );
       },
       child: const Text("Sign Up",

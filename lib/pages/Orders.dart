@@ -1,3 +1,5 @@
+import 'package:ecub_delivery/pages/home.dart';
+import 'package:ecub_delivery/pages/init.dart';
 import 'package:flutter/material.dart';
 import 'package:ecub_delivery/services/orders_service.dart';
 
@@ -25,7 +27,7 @@ class _OrdersPageState extends State<OrdersPage> {
       _isLoading = true;
     });
 
-    String status = _selectedIndex == 0 ? 'Pending' : 'Completed';
+    String status = _selectedIndex == 0 ? 'in_transit' : 'delivered';
     List<Map<String, dynamic>> orders =
         await _ordersService.fetchOrdersByStatus(status);
 
@@ -84,8 +86,8 @@ class _OrdersPageState extends State<OrdersPage> {
             color: Colors.purple[50],
             child: Row(
               children: [
-                _buildTabButton(0, 'Pending Orders'),
-                // _buildTabButton(1, 'Completed Orders'),
+                _buildTabButton(0, 'In-transit Orders'),
+                _buildTabButton(1, 'Completed Orders'),
               ],
             ),
           ),
@@ -106,6 +108,16 @@ class _OrdersPageState extends State<OrdersPage> {
                         title: Text(order['itemName'] ?? 'No Name'),
                         subtitle: Text('Price: ${order['itemPrice'] ?? 'N/A'}'),
                         trailing: Text(order['status'] ?? 'Unknown'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GoogleMapPage(
+                                oder: OrdersSam.fromMap(order),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
