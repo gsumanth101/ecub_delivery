@@ -21,6 +21,7 @@ class GoogleMapPage extends StatefulWidget {
 
 class _GoogleMapPageState extends State<GoogleMapPage> {
   final locationController = Location();
+  Timer? locationUpdateTimer;
 
   LatLng? currentPosition;
   LatLng? destinationPosition;
@@ -39,7 +40,20 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       await initializeMap();
       await fetchAndStoreEstimatedTimeOfArrival(); // Fetch and store the ETD
       setState(() {}); // Update the UI
+
+      // Start the timer to update location every second
+      locationUpdateTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
+        await fetchCurrentLocation();
+        await updateLocationInFirestore();
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    locationUpdateTimer
+        ?.cancel(); // Cancel the timer when the widget is disposed
+    super.dispose();
   }
 
   Future<BitmapDescriptor> createBitmapDescriptorFromIcon(
@@ -94,9 +108,11 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         final elements = data['rows'][0]['elements'][0];
         if (elements['status'] == 'OK') {
           final duration = elements['duration']['text'];
-          setState(() {
-            eta = duration;
-          });
+          if (mounted) {
+            setState(() {
+              eta = duration;
+            });
+          }
           await storeETDInFirestore(duration); // Store ETD in Firestore
         } else {
           debugPrint('Error fetching ETA: ${elements['status']}');
@@ -224,6 +240,34 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       }
     } catch (e) {
       debugPrint('Error updating salary and rides: $e');
+    }
+  }
+
+  Future<void> updateLocationInFirestore() async {
+    try {
+      final userId = await getLoggedInUserId();
+      if (userId == null) {
+        throw 'User is not logged in';
+      }
+
+      final orderRef = FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.oder.orderId); // Using orderId which is actually itemId
+
+      // Check if the document exists
+      final docSnapshot = await orderRef.get();
+      if (!docSnapshot.exists) {
+        throw 'Document with itemId ${widget.oder.orderId} does not exist';
+      }
+
+      await orderRef.update({
+        'current_latitude': currentPosition!.latitude,
+        'current_longitude': currentPosition!.longitude,
+      });
+
+      debugPrint('Location updated in Firestore');
+    } catch (e) {
+      debugPrint('Error updating location in Firestore: $e');
     }
   }
 
